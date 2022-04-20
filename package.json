@@ -1,0 +1,28 @@
+{
+  "name": "template-prototype",
+  "private": true,
+  "scripts": {
+    "clean": "npm run clean --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "format": "prettier --ignore-unknown --write .",
+    "prepare": "husky install"
+  },
+  "workspaces": [
+    "types/temp-foo"
+  ],
+  "devDependencies": {
+    "eslint": "^8.13.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "husky": "^7.0.0",
+    "lint-staged": "^12.3.8",
+    "prettier": "2.6.2",
+    "stylelint": "^14.7.1",
+    "stylelint-config-prettier": "^9.0.3"
+  },
+  "lint-staged": {
+    "*.js": "eslint --cache --fix",
+    "*.css": "stylelint --fix",
+    "*": "prettier --ignore-unknown --write"
+  }
+}

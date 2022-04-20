@@ -1,0 +1,10 @@
+{
+  "name": "temp-a",
+  "private": true,
+  "scripts": {
+    "start": "npm run dev",
+    "clean": "npx del ./dist",
+    "dev": "echo \"Error: no dev specified\" && exit 1",
+    "build": "echo \"Error: no build specified\" && exit 1"
+  }
+}
