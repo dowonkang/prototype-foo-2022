@@ -1,5 +1,5 @@
 {
-  "name": "temp-a",
+  "name": "temp-foo",
   "private": true,
   "scripts": {
     "start": "npm run dev",

@@ -1,0 +1,19 @@
+{
+  "name": "temp-a",
+  "private": true,
+  "scripts": {
+    "start": "npm run dev",
+    "clean": "npx del ./dist",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "sass": "^1.50.1",
+    "vite": "^2.9.5"
+  },
+  "dependencies": {
+    "lit": "^2.2.2",
+    "scroll-watcher": "file:packages/scroll-watcher"
+  }
+}
