@@ -1,78 +1,115 @@
-import getScrollValueGetter from "./get-scroll-value-getter";
-
 /**
  * @typedef {Object} ScrollInfo
  * @property {number} value
  * @property {number} timeStamp
- * @property {number} distance
- * @property {number} timeElapsed
+ * @property {number} [diff]
+ * @property {number} [distance]
+ * @property {number} [timeElapsed]
  *
  * @typedef {Object} ScrollWatcherOptions
- * @property {Window | Element} target
- * @property {number} threshold
- * @property {"x" | "y"} direction
+ * @property {(Window | Element)} [target=window]
+ * @property {number} [threshold=100]
+ * @property {("x" | "y")} [axis="y"]
  * @property {(scroll:ScrollInfo) => void} [onScrollStart]
  * @property {(scroll:ScrollInfo) => void} [onScroll]
  * @property {(scroll:ScrollInfo) => void} [onScrollEnd]
+ *
+ * @typedef {() => void} ScrollWatcherCleanup
  */
 
 /**
+ * @param {(Window | Element)} target
+ * @param {("x" | "y")} axis
+ * @returns {() => number}
+ */
+function createScrollValueGetter(target = window, axis = "y") {
+  let propertyName = `scroll${axis.toUpperCase()}`;
+
+  if (!(propertyName in target)) {
+    propertyName = `scroll${axis === "x" ? "Left" : "Top"}`;
+  }
+
+  return () => target[propertyName];
+}
+
+/**
  * @param {ScrollWatcherOptions} options
- * @returns {() => void} Cleanup Function
+ * @returns {ScrollWatcherCleanup}
  */
 export function setup({
   target = window,
   threshold = 100,
-  direction = "y",
+  axis = "y",
   onScrollStart,
   onScroll,
   onScrollEnd,
 } = {}) {
-  const getScrollValue = getScrollValueGetter(target, direction);
+  const getScrollValue = createScrollValueGetter(target, axis);
 
-  /** @type {(ScrollInfo | null)} */
-  let scrollStart = null;
+  /** @type {?ScrollInfo} */
+  let start = null;
+
+  /** @type {?ScrollInfo} */
+  let previous = null;
+
   /** @type {number} */
-  let scrollTimeout = null;
+  let distance = 0;
+
+  /** @type {?number} */
+  let thresholdTimeout = null;
 
   /** @param {Event} event */
   const listener = (event) => {
-    if (scrollTimeout) {
-      clearTimeout(scrollTimeout);
+    if (thresholdTimeout) {
+      clearTimeout(thresholdTimeout);
     }
 
-    const isScrollStart = scrollStart === null;
+    const isStart = start === null;
     const current = {
       value: getScrollValue(),
       timeStamp: event.timeStamp,
     };
 
-    if (isScrollStart) {
-      scrollStart = { ...current };
+    if (isStart) {
+      start = { ...current };
+      distance = 0;
 
       if (typeof onScrollStart === "function") {
-        onScrollStart(scrollStart);
+        onScrollStart(start);
       }
 
       const scrollStartEvent = new CustomEvent("scrollstart", {
-        detail: scrollStart,
+        detail: start,
       });
       window.dispatchEvent(scrollStartEvent);
+    } else if (previous) {
+      distance += Math.abs(current.value - previous.value);
+    } else {
+      distance = 0;
     }
 
+    /** @type {ScrollInfo} */
     const scroll = {
       ...current,
-      distance: current.value - scrollStart.value,
-      timeElapsed: current.timeStamp - scrollStart.timeStamp,
+      distance,
     };
+
+    if (start) {
+      scroll.diff = current.value - start.value;
+      scroll.timeElapsed = current.timeStamp - start.timeStamp;
+    }
+
+    previous = scroll;
 
     if (typeof onScroll === "function") {
       onScroll(scroll);
     }
 
-    scrollTimeout = setTimeout(() => {
-      scrollTimeout = null;
-      scrollStart = null;
+    thresholdTimeout = setTimeout(() => {
+      thresholdTimeout = null;
+      start = null;
+      previous = null;
+      distance = 0;
 
       if (typeof onScrollEnd === "function") {
         onScrollEnd(scroll);
@@ -85,9 +122,12 @@ export function setup({
 
   window.addEventListener("scroll", listener);
 
-  return () => {
+  /** @type {ScrollWatcherCleanup} */
+  const cleanup = () => {
     window.removeEventListener("scroll", listener);
   };
+
+  return cleanup;
 }
 
 export default setup;

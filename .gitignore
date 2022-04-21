@@ -1,6 +1,9 @@
 # Generated files
 dist/
 
+# ESLint
+.eslintcache
+
 # NPM
 node_modules/
 

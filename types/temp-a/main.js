@@ -1,8 +1,17 @@
 import setScrollWatcher from "scroll-watcher";
 
-const cleanup = setScrollWatcher({
+const cleanupScrollWatcher = setScrollWatcher({
+  onScrollStart(scroll) {
+    console.log("onScrollStart", scroll);
+  },
   onScroll(scroll) {
-    console.log(scroll);
+    console.log("onScroll", scroll);
+  },
+  onScrollEnd(scroll) {
+    console.log("onScrollEnd", scroll);
   },
 });
-console.log("Hello World!");
+
+window.addEventListener("beforeunload", () => {
+  cleanupScrollWatcher();
+});

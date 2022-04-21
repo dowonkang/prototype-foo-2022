@@ -1,4 +1,13 @@
 {
   "name": "scroll-watcher",
-  "module": "index.js"
+  "type": "module",
+  "main": "index.js",
+  "module": "index.js",
+  "scripts": {
+    "types": "tsc"
+  },
+  "types": "./types/index.d.ts",
+  "devDependencies": {
+    "typescript": "^4.6.3"
+  }
 }
