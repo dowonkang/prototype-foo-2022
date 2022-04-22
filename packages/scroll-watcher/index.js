@@ -6,20 +6,23 @@
  * @property {number} [distance]
  * @property {number} [timeElapsed]
  *
- * @typedef {Object} ScrollWatcherOptions
- * @property {(Window | Element)} [target=window]
- * @property {number} [threshold=100]
- * @property {("x" | "y")} [axis="y"]
- * @property {(scroll:ScrollInfo) => void} [onScrollStart]
- * @property {(scroll:ScrollInfo) => void} [onScroll]
- * @property {(scroll:ScrollInfo) => void} [onScrollEnd]
+ * @typedef {(scrollInfo:ScrollInfo) => void} ScrollCallback
+ * @typedef {(ScrollCallback | ScrollCallback[])} ScrollCallbackOrScrollCallbacks
+ * @typedef {(Window | Element)} ScrollTarget
+ * @typedef {("x" | "y")} ScrollAxis
  *
- * @typedef {() => void} ScrollWatcherCleanup
+ * @typedef {Object} ScrollWatcherOptions
+ * @property {ScrollTarget} target
+ * @property {number} threshold
+ * @property {ScrollAxis} axis
+ * @property {ScrollCallbackOrScrollCallbacks} [onScrollStart]
+ * @property {ScrollCallbackOrScrollCallbacks} [onScrollEnd]
+ * @property {ScrollCallbackOrScrollCallbacks} [onScroll]
  */
 
 /**
- * @param {(Window | Element)} target
- * @param {("x" | "y")} axis
+ * @param {ScrollTarget} target
+ * @param {ScrollAxis} axis
  * @returns {() => number}
  */
 function createScrollValueGetter(target = window, axis = "y") {
@@ -33,18 +36,67 @@ function createScrollValueGetter(target = window, axis = "y") {
 }
 
 /**
- * @param {ScrollWatcherOptions} options
- * @returns {ScrollWatcherCleanup}
+ * @param {ScrollTarget} target
+ * @param {string} type
+ * @param {*} detail
+ * @returns {boolean}
  */
-export function setup({
-  target = window,
-  threshold = 100,
-  axis = "y",
-  onScrollStart,
-  onScroll,
-  onScrollEnd,
-} = {}) {
+function emit(target, type, detail) {
+  const event = new CustomEvent(type, { detail });
+  return target.dispatchEvent(event);
+}
+
+/**
+ * @param {ScrollCallbackOrScrollCallbacks} [callbackOrCallbacks]
+ */
+function createScrollCallbackManager(callbackOrCallbacks) {
+  /** @type {Set<ScrollCallback>} */
+  const callbacks = new Set();
+
+  /** @param {ScrollCallbackOrScrollCallbacks} callbackOrCallbacks */
+  const addCallback = (callbackOrCallbacks) => {
+    if (typeof callbackOrCallbacks === "function") {
+      callbacks.add(callbackOrCallbacks);
+    } else if (Array.isArray(callbackOrCallbacks)) {
+      callbackOrCallbacks.forEach(addCallback);
+    }
+  };
+
+  if (callbackOrCallbacks) {
+    addCallback(callbackOrCallbacks);
+  }
+
+  return {
+    add: addCallback,
+    clear() {
+      callbacks.clear();
+    },
+    /** @param {(callback: ScrollCallback) => void} handler */
+    forEach(handler) {
+      callbacks.forEach(handler);
+    },
+  };
+}
+
+/** @type {ScrollWatcherOptions} */
+export const DEFAULTS = {
+  target: window,
+  axis: "y",
+  threshold: 150,
+};
+
+/**
+ * @param {ScrollWatcherOptions} [options]
+ */
+export function createScrollWatcher(options) {
+  const { target, axis, threshold, ...settings } = Object.assign(
+    DEFAULTS,
+    options
+  );
   const getScrollValue = createScrollValueGetter(target, axis);
+  const onScrollStart = createScrollCallbackManager(settings.onScrollStart);
+  const onScroll = createScrollCallbackManager(settings.onScroll);
+  const onScrollEnd = createScrollCallbackManager(settings.onScrollEnd);
 
   /** @type {?ScrollInfo} */
   let start = null;
@@ -74,14 +126,13 @@ export function setup({
       start = { ...current };
       distance = 0;
 
-      if (typeof onScrollStart === "function") {
-        onScrollStart(start);
-      }
-
-      const scrollStartEvent = new CustomEvent("scrollstart", {
-        detail: start,
+      onScrollStart.forEach((callback) => {
+        if (start) {
+          callback(start);
+        }
       });
-      window.dispatchEvent(scrollStartEvent);
+
+      emit(target, "scrollstart", start);
     } else if (previous) {
       distance += Math.abs(current.value - previous.value);
     } else {
@@ -101,9 +152,9 @@ export function setup({
 
     previous = scroll;
 
-    if (typeof onScroll === "function") {
-      onScroll(scroll);
-    }
+    onScroll.forEach((callback) => {
+      callback(scroll);
+    });
 
     thresholdTimeout = setTimeout(() => {
       thresholdTimeout = null;
@@ -111,23 +162,36 @@ export function setup({
       previous = null;
       distance = 0;
 
-      if (typeof onScrollEnd === "function") {
-        onScrollEnd(scroll);
-      }
+      onScrollEnd.forEach((callback) => {
+        callback(scroll);
+      });
 
-      const scrollEndEvent = new CustomEvent("scrollend", { detail: scroll });
-      window.dispatchEvent(scrollEndEvent);
+      emit(target, "scrollend", scroll);
     }, threshold);
   };
 
-  window.addEventListener("scroll", listener);
+  target.addEventListener("scroll", listener);
 
-  /** @type {ScrollWatcherCleanup} */
-  const cleanup = () => {
-    window.removeEventListener("scroll", listener);
+  return {
+    /** @param {ScrollCallback} callback */
+    set onScrollStart(callback) {
+      onScrollStart.add(callback);
+    },
+    /** @param {ScrollCallback} callback */
+    set onScrollEnd(callback) {
+      onScrollEnd.add(callback);
+    },
+    /** @param {ScrollCallback} callback */
+    set onScroll(callback) {
+      onScroll.add(callback);
+    },
+    destroy() {
+      onScrollStart.clear();
+      onScrollEnd.clear();
+      onScroll.clear();
+      target.removeEventListener("scroll", listener);
+    },
   };
-
-  return cleanup;
 }
 
-export default setup;
+export default createScrollWatcher;

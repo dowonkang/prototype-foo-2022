@@ -1,12 +1,13 @@
-export function setup({
-  target,
-  threshold,
-  axis,
-  onScrollStart,
-  onScroll,
-  onScrollEnd,
-}?: ScrollWatcherOptions): ScrollWatcherCleanup;
-export default setup;
+export function createScrollWatcher(
+  options?: ScrollWatcherOptions | undefined
+): {
+  onScrollStart: ScrollCallback;
+  onScrollEnd: ScrollCallback;
+  onScroll: ScrollCallback;
+  destroy(): void;
+};
+export const DEFAULTS: ScrollWatcherOptions;
+export default createScrollWatcher;
 export type ScrollInfo = {
   value: number;
   timeStamp: number;
@@ -14,13 +15,16 @@ export type ScrollInfo = {
   distance?: number | undefined;
   timeElapsed?: number | undefined;
 };
+export type ScrollCallback = (scrollInfo: ScrollInfo) => void;
+export type ScrollCallbackOrScrollCallbacks = ScrollCallback | ScrollCallback[];
+export type ScrollTarget = Window | Element;
+export type ScrollAxis = "x" | "y";
 export type ScrollWatcherOptions = {
-  target?: Window | Element | undefined;
-  threshold?: number | undefined;
-  axis?: "x" | "y" | undefined;
-  onScrollStart?: ((scroll: ScrollInfo) => void) | undefined;
-  onScroll?: ((scroll: ScrollInfo) => void) | undefined;
-  onScrollEnd?: ((scroll: ScrollInfo) => void) | undefined;
+  target: ScrollTarget;
+  threshold: number;
+  axis: ScrollAxis;
+  onScrollStart?: ScrollCallbackOrScrollCallbacks | undefined;
+  onScrollEnd?: ScrollCallbackOrScrollCallbacks | undefined;
+  onScroll?: ScrollCallbackOrScrollCallbacks | undefined;
 };
-export type ScrollWatcherCleanup = () => void;
 //# sourceMappingURL=index.d.ts.map
