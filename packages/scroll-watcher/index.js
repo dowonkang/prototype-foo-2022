@@ -173,17 +173,29 @@ export function createScrollWatcher(options) {
   target.addEventListener("scroll", listener);
 
   return {
-    /** @param {ScrollCallback} callback */
+    /** @param {?ScrollCallback} callback */
     set onScrollStart(callback) {
-      onScrollStart.add(callback);
+      if (callback === null) {
+        onScrollStart.clear();
+      } else {
+        onScrollStart.add(callback);
+      }
     },
-    /** @param {ScrollCallback} callback */
+    /** @param {?ScrollCallback} callback */
     set onScrollEnd(callback) {
-      onScrollEnd.add(callback);
+      if (callback === null) {
+        onScrollEnd.clear();
+      } else {
+        onScrollEnd.add(callback);
+      }
     },
-    /** @param {ScrollCallback} callback */
+    /** @param {?ScrollCallback} callback */
     set onScroll(callback) {
-      onScroll.add(callback);
+      if (callback === null) {
+        onScroll.clear();
+      } else {
+        onScroll.add(callback);
+      }
     },
     destroy() {
       onScrollStart.clear();

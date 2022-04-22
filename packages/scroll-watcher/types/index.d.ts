@@ -1,9 +1,9 @@
 export function createScrollWatcher(
   options?: ScrollWatcherOptions | undefined
 ): {
-  onScrollStart: ScrollCallback;
-  onScrollEnd: ScrollCallback;
-  onScroll: ScrollCallback;
+  onScrollStart: ScrollCallback | null;
+  onScrollEnd: ScrollCallback | null;
+  onScroll: ScrollCallback | null;
   destroy(): void;
 };
 export const DEFAULTS: ScrollWatcherOptions;

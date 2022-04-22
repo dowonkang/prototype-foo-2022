@@ -18,6 +18,6 @@ export type EffectOptions = {
   to: string;
   type: "transition" | "animation";
   timeout?: number | undefined;
-  removeToClassOnFinish?: boolean | undefined;
+  keepToClass?: boolean | undefined;
 };
 //# sourceMappingURL=index.d.ts.map
