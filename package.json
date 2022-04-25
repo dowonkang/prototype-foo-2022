@@ -9,10 +9,8 @@
     "prepare": "husky install"
   },
   "workspaces": [
-    "packages/effects",
-    "packages/scroll-watcher",
-    "types/temp-foo",
-    "types/temp-a"
+    "packages/*",
+    "types/*"
   ],
   "devDependencies": {
     "del": "^6.0.0",
