@@ -1,4 +1,5 @@
 import createScrollWatcher from "scroll-watcher";
+import { on } from "@local/util";
 
 const scrollWatcher = createScrollWatcher({
   onScrollStart(scroll) {
@@ -12,6 +13,6 @@ const scrollWatcher = createScrollWatcher({
   },
 });
 
-window.addEventListener("beforeunload", () => {
+on(window, "beforeunload", () => {
   scrollWatcher.destroy();
 });

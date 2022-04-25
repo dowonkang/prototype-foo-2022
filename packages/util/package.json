@@ -1,5 +1,5 @@
 {
-  "name": "util",
+  "name": "@local/util",
   "private": true,
   "type": "module",
   "main": "index.js",
